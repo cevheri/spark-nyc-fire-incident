@@ -13,16 +13,16 @@
 # and have been aggregated to a higher level of detail.
 from pyspark.sql import SparkSession
 from pyspark.sql import Row
-
-
+from pyspark.sql.functions import unix_timestamp, from_unixtime
+from datetime import datetime
 
 import sys
 import os
+
 os.environ['SPARK_HOME'] = "/home/cevher/apps/spark-3.0.1-bin-hadoop2.7"
-#os.environ['HADOOP_HOME'] = "/home/cevher/app/spark-3.0.1-bin-hadoop2.7/hadoop"
+# os.environ['HADOOP_HOME'] = "/home/cevher/app/spark-3.0.1-bin-hadoop2.7/hadoop"
 sys.path.append("/home/cevher/apps/spark-3.0.1-bin-hadoop2.7/python")
 sys.path.append("/home/cevher/apps/spark-3.0.1-bin-hadoop2.7/python/lib")
-
 
 if __name__ == '__main__':
     spark = SparkSession.builder.appName("sql").getOrCreate()
@@ -30,10 +30,13 @@ if __name__ == '__main__':
 
     def map_comma(line):
         fields = line.split(',')
-        return Row(indate=fields[1], incls=str(fields[15]))
+        return Row(
+            indate=fields[1],
+            incls=str(fields[15])
+        )
 
 
-    lines = spark.sparkContext.textFile("Fire_Incident_Dispatch_Data_preview.csv")  # all data
+    lines = spark.sparkContext.textFile("Fire_Incident_Dispatch_Data.csv")  # all data
     header = lines.first()  # extract header
     data = lines.filter(lambda row: row != header)  # filter out header
     fires = data.map(map_comma)
@@ -42,12 +45,25 @@ if __name__ == '__main__':
     schema = spark.createDataFrame(fires).cache()
     schema.createOrReplaceTempView("fires")
 
-    schema.show(100)
+    schema.show(2)
 
-    rows = spark.sql("SELECT incls, indate, count(*) FROM fires group by incls, indate")
-    print(rows)
+    rows = spark.sql("SELECT incls, "
+                     "indate, "
+                     "count(*) "
+                     # "unix_timestamp(indate, 'MM/dd/yyyy') as indate, "
+                     #"count(*) as incount "
+                     "FROM fires "
+                     #"group by incls, unix_timestamp(indate, 'MM/dd/yyyy')"
+                     "group by incls, indate"
+                     )
+    # date example
+    spark.sql("""
+    select from_unixtime(unix_timestamp('08/26/2016', 'MM/dd/yyyy'), 'yyyy:MM:dd') as new_format
+    """).show()
 
-    for row in rows:
-        print(row)
+    # for row in rows:
+    #     print(row)
 
-    schema.groupBy("incls").count().show()
+    rows.show()
+
+    # schema.groupBy("incls", "indate").count().show()
