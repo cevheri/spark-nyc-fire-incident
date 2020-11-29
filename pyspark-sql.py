@@ -18,10 +18,10 @@ from pyspark.sql import Row
 
 import sys
 import os
-os.environ['SPARK_HOME'] = "/home/cevher/app/spark-3.0.1-bin-hadoop2.7"
+os.environ['SPARK_HOME'] = "/home/cevher/apps/spark-3.0.1-bin-hadoop2.7"
 #os.environ['HADOOP_HOME'] = "/home/cevher/app/spark-3.0.1-bin-hadoop2.7/hadoop"
-sys.path.append("/home/cevher/app/spark-3.0.1-bin-hadoop2.7/python")
-sys.path.append("/home/cevher/app/spark-3.0.1-bin-hadoop2.7/python/lib")
+sys.path.append("/home/cevher/apps/spark-3.0.1-bin-hadoop2.7/python")
+sys.path.append("/home/cevher/apps/spark-3.0.1-bin-hadoop2.7/python/lib")
 
 
 if __name__ == '__main__':
@@ -33,7 +33,7 @@ if __name__ == '__main__':
         return Row(indate=fields[1], incls=str(fields[15]))
 
 
-    lines = spark.sparkContext.textFile("Fire_Incident_Dispatch_Data.csv")  # all data
+    lines = spark.sparkContext.textFile("Fire_Incident_Dispatch_Data_preview.csv")  # all data
     header = lines.first()  # extract header
     data = lines.filter(lambda row: row != header)  # filter out header
     fires = data.map(map_comma)
