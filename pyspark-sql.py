@@ -24,28 +24,34 @@ os.environ['SPARK_HOME'] = "/home/cevher/apps/spark-3.0.1-bin-hadoop2.7"
 sys.path.append("/home/cevher/apps/spark-3.0.1-bin-hadoop2.7/python")
 sys.path.append("/home/cevher/apps/spark-3.0.1-bin-hadoop2.7/python/lib")
 
+print(list(range(1,1)))
+
 if __name__ == '__main__':
     spark = SparkSession.builder.appName("sql").getOrCreate()
 
 
-    def map_comma(line):
+    def parse_line(line):
         fields = line.split(',')
         return Row(
             indate=fields[1],
             incls=str(fields[15])
         )
 
+    def remove_header(lines):
+        header = lines.first()  # extract header
+        return lines.filter(lambda row: row != header)  # filter out header
 
     lines = spark.sparkContext.textFile("Fire_Incident_Dispatch_Data.csv")  # all data
-    header = lines.first()  # extract header
-    data = lines.filter(lambda row: row != header)  # filter out header
-    fires = data.map(map_comma)
-    print(fires)
+
+    data = remove_header(lines)
+    rows = data.map(parse_line())
+    print(rows)
 
     schema = spark.createDataFrame(fires).cache()
     schema.createOrReplaceTempView("fires")
 
     schema.show(2)
+
 
     rows = spark.sql("SELECT incls, "
                      "indate, "
