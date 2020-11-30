@@ -17,6 +17,7 @@ from pyspark import SparkConf, SparkContext
 
 import sys
 import os
+from operator import add
 
 os.environ['SPARK_HOME'] = "/home/cevher/apps/spark-3.0.1-bin-hadoop2.7"
 # os.environ['HADOOP_HOME'] = "/home/cevher/app/spark-3.0.1-bin-hadoop2.7/hadoop"
@@ -29,19 +30,25 @@ if __name__ == '__main__':
 
 
     def parse_line(line):
-        fields = line.split(",")
-        in_date = fields[2]
-        in_class = fields[16]
-        return (in_date, in_class)
+        fields = line.split(',')
+        # in_date = fields[1],
+        in_class = str(fields[15])
+        in_val = 1
+        return (in_class, in_val)
 
 
-    lines = sc.textFile("Fire_Incident_Dispatch_Data.csv").flatMap(lambda line: line.split(",")) .map(lambda word: (word, 1)).reduceByKey(lambda (x, y): (x + y))
+    def remove_header(lines):
+        header = lines.first()  # extract header
+        return lines.filter(lambda row: row != header)  # filter out header
 
-    # rdd = lines.map(parse_line)
-    rdd.map(lambda word: (word, 1)).groupByKey().map(lambda (x, y): (x, sum(y)))
 
-    rdd2 = rdd.groupBy("in_date", "in_class")
-    # rdd2.show()
+    lines = sc.textFile("Fire_Incident_Dispatch_Data.csv")  # all data
 
-    totals_by_count = rdd.mapValues(lambda x: (x, 1)).reduceByKey(lambda x, y: (x, y))
-    totals_by_count.show()
+    data = remove_header(lines)
+    rdd = data.map(parse_line)
+    print(rdd)
+
+    rdd1 = rdd.reduceByKey(add)
+    result = rdd1.collect()
+    for row in result:
+        print(row)
