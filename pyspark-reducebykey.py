@@ -32,9 +32,8 @@ if __name__ == '__main__':
     def parse_line(line):
         fields = line.split(',')
         # in_date = fields[1],
-        in_class = str(fields[15])
-        in_val = 1
-        return (in_class, in_val)
+        in_class = str(fields[15]) 
+        return (in_class)
 
 
     def remove_header(lines):
@@ -48,7 +47,7 @@ if __name__ == '__main__':
     rdd = data.map(parse_line)
     print(rdd)
 
-    rdd1 = rdd.reduceByKey(add)
+    rdd1 = rdd.map(lambda x: (x, 1)).reduceByKey(add)
     result = rdd1.collect()
     for row in result:
         print(row)
