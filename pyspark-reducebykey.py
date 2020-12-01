@@ -25,7 +25,7 @@ sys.path.append("/home/cevher/apps/spark-3.0.1-bin-hadoop2.7/python")
 sys.path.append("/home/cevher/apps/spark-3.0.1-bin-hadoop2.7/python/lib")
 
 if __name__ == '__main__':
-    conf = SparkConf().setMaster("local").setAppName("totals_by_count")
+    conf = SparkConf().setMaster("local").setAppName("reduceByKey")
     sc = SparkContext(conf=conf)
 
 

@@ -11,11 +11,13 @@
 # To protect personal identifying information in accordance with the Health Insurance Portability
 # and Accountability Act (HIPAA), specific locations of incidents are not included
 # and have been aggregated to a higher level of detail.
-from pyspark.sql import SparkSession
-from pyspark.sql import Row
+
+
+from pyspark import SparkConf, SparkContext
 
 import sys
 import os
+from operator import add
 
 os.environ['SPARK_HOME'] = "/home/cevher/apps/spark-3.0.1-bin-hadoop2.7"
 # os.environ['HADOOP_HOME'] = "/home/cevher/app/spark-3.0.1-bin-hadoop2.7/hadoop"
@@ -23,15 +25,15 @@ sys.path.append("/home/cevher/apps/spark-3.0.1-bin-hadoop2.7/python")
 sys.path.append("/home/cevher/apps/spark-3.0.1-bin-hadoop2.7/python/lib")
 
 if __name__ == '__main__':
-    spark = SparkSession.builder.appName("sql").getOrCreate()
+    conf = SparkConf().setMaster("local").setAppName("groupByKey")
+    sc = SparkContext(conf=conf)
 
 
-    def parse_line(lines):
-        fields = lines.split(',')
-        return Row(
-            indate=fields[1][:10],
-            incls=fields[15]
-        )
+    def parse_line(line):
+        fields = line.split(',')
+        in_class = str(fields[15])
+        in_date = str(fields[1][:10])
+        return in_date, in_class
 
 
     def remove_header(lines):
@@ -39,24 +41,12 @@ if __name__ == '__main__':
         return lines.filter(lambda row: row != header)  # filter out header
 
 
-    lines = spark.sparkContext.textFile("Fire_Incident_Dispatch_Data.csv")  # all data
+    lines = sc.textFile("Fire_Incident_Dispatch_Data.csv")  # all data
     data = remove_header(lines)
-    rows = data.map(parse_line)
+    rdd = data.map(parse_line)
+    print(rdd)
 
-    schema = spark.createDataFrame(rows).cache()
-    schema.createOrReplaceTempView("fires")
-    schema.show(2)
-
-    rows = spark.sql("SELECT incls, indate, count(*) "
-                     "FROM fires "
-                     "group by incls, indate"
-                     )
-    # date example
-    spark.sql("""
-    select from_unixtime(unix_timestamp('08/26/2016', 'MM/dd/yyyy'), 'yyyy:MM:dd') as new_format
-    """).show()
-
-    for row in rows:
+    rdd1 = rdd.map(lambda x: (x, 1)).groupByKey().mapValues(len)
+    result = rdd1.collect()
+    for row in result:
         print(row)
-
-    schema.groupBy("incls", "indate").count().show()
