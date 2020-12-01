@@ -31,9 +31,9 @@ if __name__ == '__main__':
 
     def parse_line(line):
         fields = line.split(',')
-        # in_date = fields[1],
-        in_class = str(fields[15]) 
-        return (in_class)
+        in_class = str(fields[15])
+        in_date = str(fields[1][:10])
+        return in_date, in_class
 
 
     def remove_header(lines):
@@ -42,7 +42,6 @@ if __name__ == '__main__':
 
 
     lines = sc.textFile("Fire_Incident_Dispatch_Data.csv")  # all data
-
     data = remove_header(lines)
     rdd = data.map(parse_line)
     print(rdd)
